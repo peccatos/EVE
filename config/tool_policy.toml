@@ -1,0 +1,19 @@
+[policy]
+default_action = "deny"
+require_json_contract = true
+log_all_calls = true
+
+[[tools]]
+name = "read_file"
+enabled = true
+side_effects = false
+
+[[tools]]
+name = "list_dir"
+enabled = true
+side_effects = false
+
+[[tools]]
+name = "file_exists"
+enabled = true
+side_effects = false

@@ -1,0 +1,8 @@
+too-many-arguments-threshold = 7
+type-complexity-threshold = 250
+single-char-binding-names-threshold = 3
+enum-variant-name-threshold = 3
+large-error-threshold = 128
+stack-size-threshold = 512000
+avoid-breaking-exported-api = true
+disallowed-names = ["foo", "bar", "baz", "tmp", "data2"]

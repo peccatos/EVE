@@ -1,0 +1,21 @@
+[eve]
+name = "EVE OSS"
+version = "0.1.0"
+platform = "linux"
+mode = "runtime"
+
+[logging]
+level = "info"
+format = "pretty"
+
+[runtime]
+deterministic = true
+max_cycles = 64
+
+[tools]
+enabled = true
+policy_path = "config/tool_policy.toml"
+
+[model]
+enabled = false
+json_only = true
