@@ -2,6 +2,10 @@ use serde::Deserialize;
 use std::fs;
 use std::path::Path;
 
+//
+pub mod tool_registry;
+//
+
 #[derive(Debug, Deserialize)]
 pub struct EveConfig {
     pub eve: EveSection,
@@ -157,5 +161,37 @@ pub fn boot_kernel() -> Result<KernelState, Box<dyn std::error::Error>> {
         config,
         tool_policy,
     })
+}
+//
+
+
+//
+pub fn validate_tool_registry_alignment(state: &KernelState) -> Result<(), String> {
+    let builtins = tool_registry::builtin_tools();
+
+    for policy_tool in &state.tool_policy.tools {
+        let found = builtins.iter().find(|tool| tool.name == policy_tool.name);
+
+        let builtin = match found {
+            Some(tool) => tool,
+            None => {
+                return Err(format!(
+                    "tool '{}' exists in policy but not in builtin registry",
+                    policy_tool.name
+                ));
+            }
+        };
+
+        if builtin.side_effects != policy_tool.side_effects {
+            return Err(format!(
+                "tool '{}' side_effects mismatch: policy={}, builtin={}",
+                policy_tool.name,
+                policy_tool.side_effects,
+                builtin.side_effects
+            ));
+        }
+    }
+
+    Ok(())
 }
 //
