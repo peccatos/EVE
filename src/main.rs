@@ -1,4 +1,4 @@
-use kernel::boot_kernel;
+use kernel::{boot_kernel, validate_tool_registry_alignment};
 
 fn main() {
     let kernel = match boot_kernel() {
@@ -8,6 +8,11 @@ fn main() {
             std::process::exit(1);
         }
     };
+
+    if let Err(err) = validate_tool_registry_alignment(&kernel) {
+        eprintln!("tool registry validation failed: {err}");
+        std::process::exit(1);
+    }
 
     println!("boot: {}", kernel.config.eve.name);
     println!("version: {}", kernel.config.eve.version);
