@@ -136,3 +136,26 @@ pub fn validate_tool_policy(cfg: &ToolPolicyConfig) -> Result<(), String> {
 
     Ok(())
 }
+
+
+//
+#[derive(Debug)]
+pub struct KernelState {
+    pub config: EveConfig,
+    pub tool_policy: ToolPolicyConfig,
+}
+
+pub fn boot_kernel() -> Result<KernelState, Box<dyn std::error::Error>> {
+    let config = load_config("config/eve.toml")?;
+    validate_config(&config).map_err(|e| format!("config validation failed: {e}"))?;
+
+    let tool_policy = load_tool_policy(&config.tools.policy_path)?;
+    validate_tool_policy(&tool_policy)
+        .map_err(|e| format!("tool policy validation failed: {e}"))?;
+
+    Ok(KernelState {
+        config,
+        tool_policy,
+    })
+}
+//
