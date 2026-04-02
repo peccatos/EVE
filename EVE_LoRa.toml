@@ -1,0 +1,386 @@
+version = "0.1.0"
+system = "EVE LoRa"
+profile = "planetary-hybrid"
+mode = "production-draft"
+description = "Hybrid Linux-first LoRa network config for local radio segments + regional gateways + global uplink."
+
+[node]
+node_id = "eve-node-0001"
+node_role = "gateway"
+hostname = "eve-linux-gateway-01"
+region = "global"
+zone = "earth"
+site = "unset"
+enabled = true
+
+[identity]
+network_id = "eve-global-net"
+cluster_id = "earth-primary"
+tenant_id = "default"
+protocol_family = "eve-lora-binary"
+binary_protocol_version = 1
+
+[radio]
+driver = "sx127x"
+interface = "spi"
+device = "/dev/spidev0.0"
+reset_gpio = 25
+busy_gpio = -1
+dio0_gpio = 24
+dio1_gpio = 23
+chip_select = 0
+
+frequency_hz = 868100000
+band_plan = "EU868"
+bandwidth_hz = 125000
+spreading_factor = 9
+coding_rate = "4/5"
+preamble_length = 8
+sync_word = 18
+crc_enabled = true
+implicit_header = false
+iq_inverted = false
+tx_power_dbm = 17
+gain = "auto"
+
+rx_timeout_ms = 1200
+cad_enabled = true
+cad_timeout_ms = 250
+duty_cycle_enforced = true
+
+[packet]
+format = "binary"
+max_payload_bytes = 192
+mtu_bytes = 255
+header_bytes = 24
+footer_bytes = 4
+crc32_enabled = true
+sequence_number_enabled = true
+fragmentation_enabled = false
+reassembly_enabled = false
+compression = "none"
+
+[packet.layout]
+magic = 44550
+version = 1
+include_network_id = true
+include_node_id = true
+include_route_id = true
+include_hop_count = true
+include_timestamp = true
+include_ttl = true
+include_flags = true
+include_payload_type = true
+include_checksum = true
+
+[network]
+topology = "hybrid"
+transport_mode = "lora-local-plus-global-uplink"
+addressing_mode = "hierarchical"
+max_nodes = 1000000
+max_local_neighbors = 64
+discovery_enabled = true
+discovery_interval_sec = 60
+heartbeat_enabled = true
+heartbeat_interval_sec = 30
+store_and_forward = true
+deduplication_enabled = true
+duplicate_window_sec = 120
+out_of_order_buffering = true
+
+[network.addressing]
+planet = "earth"
+region_bits = 16
+zone_bits = 16
+cluster_bits = 16
+node_bits = 64
+require_unique_node_id = true
+broadcast_enabled = false
+multicast_enabled = true
+anycast_enabled = false
+
+[routing]
+mode = "gateway-first-with-relay"
+mesh_forwarding_enabled = true
+relay_enabled = true
+gateway_required_for_global = true
+dynamic_routes = true
+route_cache_enabled = true
+route_cache_ttl_sec = 300
+max_hops = 8
+default_ttl = 16
+anti_loop_enabled = true
+prefer_low_loss_routes = true
+prefer_low_power_routes = false
+prefer_deterministic_routes = true
+route_selection = "score-based"
+
+[routing.score]
+rssi_weight = 0.20
+snr_weight = 0.20
+loss_weight = 0.25
+latency_weight = 0.10
+hop_weight = 0.10
+stability_weight = 0.15
+
+[delivery]
+ack_mode = "selective"
+ack_timeout_ms = 1500
+max_retries = 4
+retry_backoff = "fixed"
+retry_backoff_ms = 800
+confirm_gateway_delivery = true
+confirm_global_delivery = false
+sequence_window = 1024
+drop_duplicate_sequences = true
+require_in_order_for_control_packets = true
+allow_out_of_order_for_data_packets = true
+
+[uplink]
+enabled = true
+mode = "hybrid"
+primary = "satellite"
+secondary = "internet"
+failover_enabled = true
+failback_enabled = true
+healthcheck_interval_sec = 15
+offline_queue_enabled = true
+offline_queue_max_packets = 50000
+offline_queue_max_disk_mb = 1024
+
+[uplink.satellite]
+enabled = true
+provider = "unset"
+endpoint = "unset"
+mtu_bytes = 512
+latency_budget_ms = 5000
+cost_mode = "expensive"
+use_for_priority = ["critical", "control", "emergency"]
+
+[uplink.internet]
+enabled = true
+endpoint = "https://unset"
+protocol = "https"
+mtu_bytes = 1200
+latency_budget_ms = 1500
+use_for_priority = ["bulk", "sync", "telemetry"]
+
+[security]
+enabled = true
+encryption = "aes-256-gcm"
+authentication = "hmac-sha256"
+key_rotation_enabled = true
+key_rotation_interval_hours = 24
+allow_plaintext = false
+allow_unknown_nodes = false
+require_signed_control_packets = true
+replay_protection = true
+replay_window = 2048
+zeroize_keys_on_shutdown = true
+
+[security.keys]
+key_source = "file"
+enc_key_file = "/etc/eve-lora/keys/enc.key"
+auth_key_file = "/etc/eve-lora/keys/auth.key"
+node_key_file = "/etc/eve-lora/keys/node.key"
+trust_store_file = "/etc/eve-lora/trust/allowed_nodes.toml"
+
+[security.provisioning]
+provisioning_mode = "manual"
+allow_bootstrap_join = false
+allow_remote_rekey = false
+require_operator_approval = true
+
+[policy]
+binary_only = true
+allow_text_payload = false
+allow_json_payload = false
+allow_firmware_push = false
+allow_remote_exec = false
+allow_broadcast_commands = false
+allow_unencrypted_debug = false
+drop_unknown_payload_types = true
+max_packets_per_minute_per_node = 120
+max_control_packets_per_minute_per_node = 30
+max_failed_auth_before_quarantine = 5
+quarantine_duration_sec = 3600
+
+[payload]
+default_type = "binary_blob"
+supported_types = [
+  "binary_blob",
+  "telemetry_frame",
+  "control_frame",
+  "routing_frame",
+  "emergency_frame"
+]
+
+[payload.binary_blob]
+max_size_bytes = 192
+require_ack = false
+priority = "normal"
+
+[payload.telemetry_frame]
+max_size_bytes = 128
+require_ack = false
+priority = "normal"
+
+[payload.control_frame]
+max_size_bytes = 64
+require_ack = true
+priority = "high"
+
+[payload.routing_frame]
+max_size_bytes = 96
+require_ack = true
+priority = "high"
+
+[payload.emergency_frame]
+max_size_bytes = 64
+require_ack = true
+priority = "critical"
+
+[qos]
+enabled = true
+priority_levels = ["bulk", "normal", "high", "critical"]
+default_priority = "normal"
+critical_reserve_percent = 20
+drop_low_priority_on_congestion = true
+fair_queueing = true
+
+[storage]
+enabled = true
+backend = "sqlite"
+path = "/var/lib/eve-lora/eve_lora.db"
+journal_mode = "wal"
+cache_size_pages = 2000
+retain_packets_hours = 72
+retain_routes_hours = 24
+retain_metrics_hours = 168
+retain_security_events_hours = 720
+
+[store_forward]
+enabled = true
+disk_spool_dir = "/var/spool/eve-lora"
+max_spool_size_mb = 2048
+packet_expiry_sec = 86400
+resend_interval_sec = 30
+resend_batch_size = 64
+drop_expired_packets = true
+
+[observability]
+metrics_enabled = true
+health_enabled = true
+tracing_enabled = true
+prometheus_enabled = false
+prometheus_bind = "127.0.0.1:9108"
+
+[logging]
+level = "info"
+format = "json"
+output = "file"
+path = "/var/log/eve-lora/eve-lora.log"
+rotate = true
+rotate_max_mb = 100
+rotate_keep = 10
+log_packets = false
+log_headers_only = true
+log_security_events = true
+log_route_changes = true
+log_uplink_failover = true
+
+[runtime]
+os = "linux"
+daemon_mode = true
+worker_threads = 4
+event_queue_capacity = 4096
+packet_queue_capacity = 8192
+control_queue_capacity = 2048
+shutdown_timeout_sec = 10
+panic_policy = "fail-fast"
+deterministic_mode = true
+monotonic_clock_required = true
+
+[runtime.timers]
+tick_interval_ms = 100
+maintenance_interval_sec = 30
+route_refresh_interval_sec = 60
+security_sweep_interval_sec = 300
+metrics_flush_interval_sec = 15
+
+[linux]
+run_as_user = "eve"
+run_as_group = "eve"
+pid_file = "/run/eve-lora.pid"
+state_dir = "/var/lib/eve-lora"
+config_dir = "/etc/eve-lora"
+spool_dir = "/var/spool/eve-lora"
+log_dir = "/var/log/eve-lora"
+
+[linux.permissions]
+require_spi_access = true
+require_gpio_access = true
+require_state_dir_write = true
+require_log_dir_write = true
+
+[gateway]
+enabled = true
+listen_lora = true
+bridge_local_mesh = true
+bridge_to_global_uplink = true
+bridge_to_satellite = true
+bridge_to_internet = true
+local_ingress_only_when_authenticated = true
+global_egress_policy = "priority-and-policy-checked"
+
+[relay]
+enabled = true
+relay_control_packets = true
+relay_data_packets = true
+relay_emergency_packets = true
+max_relay_hops = 4
+relay_when_battery_low = false
+
+[mesh]
+enabled = true
+neighbor_table_enabled = true
+neighbor_timeout_sec = 180
+local_repair_enabled = true
+passive_route_learning = true
+active_route_probing = false
+
+[global]
+enabled = true
+planetary_mode = true
+require_regional_gateways = true
+regional_partition_tolerance = true
+inter_region_sync_enabled = true
+eventual_consistency = true
+strict_global_consistency = false
+
+[emergency]
+enabled = true
+payload_type = "emergency_frame"
+force_ack = true
+max_retries = 8
+prefer_satellite = true
+fallback_to_any_available_uplink = true
+sirens_disabled = true
+
+[validation]
+startup_validation = true
+reject_invalid_band_plan = true
+reject_invalid_frequency = true
+reject_missing_keys = true
+reject_oversized_payload = true
+reject_duplicate_node_id = true
+reject_unsafe_policy = true
+
+[audit]
+enabled = true
+audit_format = "jsonl"
+audit_path = "/var/log/eve-lora/audit.jsonl"
+include_config_hash = true
+include_packet_decisions = true
+include_route_decisions = true
+include_security_decisions = true
