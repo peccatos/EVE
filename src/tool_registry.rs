@@ -1,5 +1,3 @@
-//
-
 #[derive(Debug, Clone)]
 pub struct ToolDescriptor {
     pub name: &'static str,
@@ -22,5 +20,3 @@ pub fn builtin_tools() -> Vec<ToolDescriptor> {
         },
     ]
 }
-
-//

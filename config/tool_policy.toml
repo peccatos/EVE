@@ -3,6 +3,14 @@ default_action = "deny"
 require_json_contract = true
 log_all_calls = true
 
+[throttle]
+enabled = true
+window_size = 20
+candidate_limit = 3
+critical_delay_threshold = 4
+failure_threshold = 2
+exempt_dry_run = true
+
 [[tools]]
 name = "read_file"
 enabled = true
